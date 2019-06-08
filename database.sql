@@ -9,7 +9,7 @@ CREATE TABLE Nodes(
     AvailableMemory FLOAT
 );
 CREATE TABLE Requests(
-    ID CHAR(5),
+    ID VARCHAR(5),
     AllocatedNodeName VARCHAR(5),
     StartTime DATETIME,
     CPURequired INT,
