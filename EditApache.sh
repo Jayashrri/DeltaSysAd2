@@ -107,3 +107,5 @@ echo "Listen 81
 Listen 82
 Listen 83
 Listen 84" >$confpath
+
+etc/init.d/apache2 restart
