@@ -28,6 +28,9 @@ if(!mysqli_select_db('CernServer')){
     echo "Tables created successfully";
 }
 
+$sql = "USE CernServer";
+$conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
+
 $ID = htmlspecialchars($_POST['ID']);
 $CPURequired = htmlspecialchars($_POST['CPURequired']);
 $MemoryRequired = htmlspecialchars($_POST['MemoryRequired']);
