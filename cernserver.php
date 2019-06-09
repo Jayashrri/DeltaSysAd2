@@ -10,7 +10,7 @@ if($conn->connect_error){
 }
 echo "Connected Successfully";
 
-if(!mysqli_select_db('CernServer')){
+if(!mysqli_select_db($conn,'CernServer')){
     $templine = "";
     $lines = file($sqlscript);
 
@@ -28,8 +28,6 @@ if(!mysqli_select_db('CernServer')){
     echo "Tables created successfully";
 }
 
-$sql = "USE CernServer";
-$conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
 
 $ID = htmlspecialchars($_POST['ID']);
 $CPURequired = htmlspecialchars($_POST['CPURequired']);
@@ -49,6 +47,33 @@ for($x=0;$x<4;$x++){
     $NodeMemory[$x] = $row["AvailableMemory"];
 }
 
+$sql = "SELECT AllocatedNodeName, CPURequired, MemoryRequired, TimeRequiredForCompletion FROM Requests";
+if($result=$conn->query($sql)){
+    while($row=$result->fetch_assoc()){
+        $curtime = date("y-m-d h:i:s");
+        $ReqTime = $row["TimeRequiredForCompletion"];
+        $NodeName = $row["AllocatedNoneName"];
+        if($curtime>(date_add($row["StartTime"],date_interval_create_from_date_string("$ReqTime seconds")))){
+            if($NodeName == "Node1"){
+                $NodeCPU[0] += $row["CPURequired"];
+                $NodeMemory[0] += $row["MemoryRequired"];
+            }
+            else if($NodeName == "Node2"){
+                $NodeCPU[1] += $row["CPURequired"];
+                $NodeMemory[1] += $row["MemoryRequired"];
+            }
+            else if($NodeName == "Node3"){
+                $NodeCPU[2] += $row["CPURequired"];
+                $NodeMemory[2] += $row["MemoryRequired"];
+            }
+            else if($NodeName == "Node4"){
+                $NodeCPU[3] += $row["CPURequired"];
+                $NodeMemory[3] += $row["MemoryRequired"];
+            }
+        }
+    }
+}
+
 $AllocateNode =  "None";
 
 for($x=0;$x<4;$x++){
@@ -58,10 +83,15 @@ for($x=0;$x<4;$x++){
     }
 }
 
+$InitialCPU = $NodeCPU[$x];
+$InitialMemory = $NodeMemory[$x];
+
 if($AllocateNode != "None"){
     $sql = "INSERT INTO Requests VALUES ($ID, $AllocateNode, $StartTime, $CPURequired, $MemoryRequired, $TimeRequired) ";
-    $conn->query($sql) or print("Error performing query: " . $templine . " : " . $conn->error());
+    $conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
     echo "Request sent to $AllocateNode";
+    $sql = "UPDATE Nodes SET AvailableCPUs=$InitialCPU-$CPURequired, AvailableMemory=$InitialMemory-$MemoryRequired WHERE NodeName='$AllocateNode'";
+    $conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
 }
 else{
     echo "Request cannot be handled";

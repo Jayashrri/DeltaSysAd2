@@ -17,3 +17,4 @@ CREATE TABLE Requests(
     TimeRequiredForCompletion INT
 );
 
+INSERT INTO Nodes VALUES ('Node1','5','5','100','100'),('Node2','10','10','150','150'),('Node3','15','15','200','200'),('Node4','20','20','250','250');

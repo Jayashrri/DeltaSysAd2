@@ -2,7 +2,6 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$db = "CernServer";
 
 $conn = new mysqli($servername,$username,$password,$db);
 if($conn->connect_error){
@@ -10,7 +9,27 @@ if($conn->connect_error){
 }
 echo "Connected Successfully";
 
-$sql = "SELECT ID, StartTime, CPURequired, MemoryRequired, TimeRequiredForCompletion FROM Requests WHERE AllocaterNodeName = 'Node2' ";
+
+if(!mysqli_select_db($conn,'CernServer')){
+    $templine = "";
+    $lines = file($sqlscript);
+
+    foreach($lines as $line){
+        if(substr($line,0,2) == '--' || $line == '')
+            continue;
+        $templine .= $line;
+
+        if(substr(trim($line),-1,1) == ';'){
+            $conn->query($templine) or print("Error performing query: " . $templine . " : " . $conn->error());
+            $templine = "";
+        }
+    }
+
+    echo "Tables created successfully";
+}
+
+
+$sql = "SELECT ID, StartTime, CPURequired, MemoryRequired, TimeRequiredForCompletion FROM Requests WHERE AllocatedNodeName = 'Node2' ";
 if($result=$conn->query($sql)){
     echo "<p>Running Processes</p>";
     echo "<table>";
