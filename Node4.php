@@ -1,34 +1,17 @@
 <?php
 $servername = "localhost";
-$username = "root";
-$password = "";
+$username = "cerndb";
+$password = "passcode";
+$dbname = "CernServer";
 
-$conn = new mysqli($servername,$username,$password,$db);
-if($conn->connect_error){
-    die("Connection Failed: " . $conn->connect_error);
+$conn = mysqli_connect($servername,$username,$password,$dbname);
+if(!$conn){
+    die("Connection Failed: " . mysqli_error($conn));
 }
 echo "Connected Successfully";
 
-if(!mysqli_select_db($conn,'CernServer')){
-    $templine = "";
-    $lines = file($sqlscript);
-
-    foreach($lines as $line){
-        if(substr($line,0,2) == '--' || $line == '')
-            continue;
-        $templine .= $line;
-
-        if(substr(trim($line),-1,1) == ';'){
-            $conn->query($templine) or print("Error performing query: " . $templine . " : " . $conn->error());
-            $templine = "";
-        }
-    }
-
-    echo "Tables created successfully";
-}
-
 $sql = "SELECT ID, StartTime, CPURequired, MemoryRequired, TimeRequiredForCompletion FROM Requests WHERE AllocatedNodeName = 'Node4' ";
-if($result=$conn->query($sql)){
+if($result=mysqli_query($conn,$sql)){
     echo "<p>Running Processes</p>";
     echo "<table>";
     echo "<tr>";
@@ -38,21 +21,24 @@ if($result=$conn->query($sql)){
     echo "<th>Memory Required</th>";
     echo "<th>Time Required</th>";
     echo "</tr>";
-    while($row=$result->fetch_assoc()){
+    while($row=mysqli_fetch_assoc($result)){
         $curtime = date("y-m-d h:i:s");
         $ReqTime = $row["TimeRequiredForCompletion"];
-        if($curtime<(date_add($row["StartTime"],date_interval_create_from_date_string("$ReqTime seconds")))){
+        $comptime = date("y-m-d h:i:s",strtotime("+".$ReqTime." seconds",strtotime($row["StartTime"])));
+        if($curtime<$comptime){
             echo "<tr>";
             echo "<td>".$row["ID"]."</td>";
             echo "<td>".$row["StartTime"]."</td>";
             echo "<td>".$row["CPURequired"]."</td>";
             echo "<td>".$row["MemoryRequired"]."</td>";
             echo "<td>".$row["TimeRequiredForCompletion"]."</td>";
+            echo "</tr>";
         }
     }
+    echo "</table>";
 }
 
-if($result=$conn->query($sql)){
+if($result=mysqli_query($conn,$sql)){
     echo "<br><br><br>";
     echo "<p>History</p>";
     echo "<table>";
@@ -63,18 +49,21 @@ if($result=$conn->query($sql)){
     echo "<th>Memory Required</th>";
     echo "<th>Time Required</th>";
     echo "</tr>";
-    while($row=$result->fetch_assoc()){
+    while($row=mysqli_fetch_assoc($result)){
         $curtime = date("y-m-d h:i:s");
         $ReqTime = $row["TimeRequiredForCompletion"];
-        if($curtime>=(date_add($row["StartTime"],date_interval_create_from_date_string("$ReqTime seconds")))){
+        $comptime = date("y-m-d h:i:s",strtotime("+".$ReqTime." seconds",strtotime($row["StartTime"])));
+        if($curtime>$comptime){
             echo "<tr>";
             echo "<td>".$row["ID"]."</td>";
             echo "<td>".$row["StartTime"]."</td>";
             echo "<td>".$row["CPURequired"]."</td>";
             echo "<td>".$row["MemoryRequired"]."</td>";
             echo "<td>".$row["TimeRequiredForCompletion"]."</td>";
+            echo "</tr>";
         }
     }
+    echo "</table>";
 }
 
 $conn->close();

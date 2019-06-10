@@ -1,33 +1,14 @@
 <?php
 $servername = "localhost";
-$username = "root";
-$password = "";
-$sqlscript = "database.sql";
+$username = "cerndb";
+$password = "passcode";
+$dbname = "CernServer";
 
-$conn = new mysqli($servername,$username,$password);
-if($conn->connect_error){
-    die("Connection Failed: " . $conn->connect_error);
+$conn = mysqli_connect($servername,$username,$password,$dbname);
+if(!$conn){
+    die("Connection Failed: " . mysqli_error($conn));
 }
 echo "Connected Successfully";
-
-if(!mysqli_select_db($conn,'CernServer')){
-    $templine = "";
-    $lines = file($sqlscript);
-
-    foreach($lines as $line){
-        if(substr($line,0,2) == '--' || $line == '')
-            continue;
-        $templine .= $line;
-
-        if(substr(trim($line),-1,1) == ';'){
-            $conn->query($templine) or print("Error performing query: " . $templine . " : " . $conn->error());
-            $templine = "";
-        }
-    }
-
-    echo "Tables created successfully";
-}
-
 
 $ID = htmlspecialchars($_POST['ID']);
 $CPURequired = htmlspecialchars($_POST['CPURequired']);
@@ -40,7 +21,7 @@ $NodeCPU = array();
 $NodeMemory = array();
 $sql = "SELECT AvailableCPUs, AvailableMemory FROM Nodes";
 
-$result = $conn->query($sql);
+$result = mysqli_query($conn,$sql);
 for($x=0;$x<4;$x++){
     $row = $result->fetch_assoc();
     $NodeCPU[$x] = $row["AvailableCPUs"];
@@ -48,8 +29,8 @@ for($x=0;$x<4;$x++){
 }
 
 $sql = "SELECT AllocatedNodeName, CPURequired, MemoryRequired, TimeRequiredForCompletion FROM Requests";
-if($result=$conn->query($sql)){
-    while($row=$result->fetch_assoc()){
+if($result=mysqli_query($conn,$sql)){
+    while($row=mysqli_fetch_assoc($result)){
         $curtime = date("y-m-d h:i:s");
         $ReqTime = $row["TimeRequiredForCompletion"];
         $NodeName = $row["AllocatedNoneName"];
@@ -78,7 +59,7 @@ $AllocateNode =  "None";
 
 for($x=0;$x<4;$x++){
     if($CPURequired<$NodeCPU[$x] && $MemoryRequired<$NodeMemory[$x]){
-        $AllocateNode = "Node"+$x;
+        $AllocateNode = "Node".$x;
         break;
     }
 }
@@ -87,15 +68,15 @@ $InitialCPU = $NodeCPU[$x];
 $InitialMemory = $NodeMemory[$x];
 
 if($AllocateNode != "None"){
-    $sql = "INSERT INTO Requests VALUES ($ID, $AllocateNode, $StartTime, $CPURequired, $MemoryRequired, $TimeRequired) ";
-    $conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
+    $sql = "INSERT INTO Requests VALUES ('$ID', '$AllocateNode', '$StartTime', $CPURequired, $MemoryRequired, $TimeRequired) ";
+    mysqli_query($conn,$sql) or print("Error performing query: " . $sql . " : " . mysqli_error($conn));
     echo "Request sent to $AllocateNode";
     $sql = "UPDATE Nodes SET AvailableCPUs=$InitialCPU-$CPURequired, AvailableMemory=$InitialMemory-$MemoryRequired WHERE NodeName='$AllocateNode'";
-    $conn->query($sql) or print("Error performing query: " . $sql . " : " . $conn->error());
+    mysqli_query($conn,$sql) or print("Error performing query: " . $sql . " : " . mysqli_error($conn));
 }
 else{
     echo "Request cannot be handled";
 }
 
-$conn->close();
+mysqli_close($conn);
 ?>

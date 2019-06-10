@@ -3,6 +3,10 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd $DIR
 
+read -p "Enter MySQL Username: " username
+read -s -p "Enter Password: " password
+mysql -u $username -p$password < database.sql
+
 mkdir -p /var/www/html/node1.com/public_html
 cp Node1.php /var/www/html/node1.com/public_html/index.php
 chown -R www-data:www-data /var/www/html/node1.com
